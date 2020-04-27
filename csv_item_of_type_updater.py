@@ -10,6 +10,7 @@ from py_jama_rest_client.client import APIException
 
 logger = logging.getLogger(__name__)
 
+# maintain a global unique item id map so that we dont redo any redundant API calls.
 unique_item_id_map = {}
 
 
@@ -22,7 +23,7 @@ def update_item_of_types(config: configparser.ConfigParser):
     using_api_id = None
     source_field_name = None
     destination_field_name = None
-
+    # try and grab the settings from the config file
     try:
         csv_file_path = config.get('SCRIPT_SETTINGS', 'csv_file_path')
         destination_item_of_type_field = config.get('SCRIPT_SETTINGS', 'destination_item_of_type_field')
@@ -31,7 +32,6 @@ def update_item_of_types(config: configparser.ConfigParser):
         using_api_id = config.getboolean('SCRIPT_SETTINGS', 'using_api_id')
         source_field_name = config.get('SCRIPT_SETTINGS', 'source_field_name')
         destination_field_name = config.get('SCRIPT_SETTINGS', 'destination_field_name')
-
     except configparser.Error as config_error:
         logger.error("Unable to parse SCRIPT_SETTINGS because: {} Please check settings and try again."
                      .format(str(config_error)))
@@ -50,7 +50,16 @@ def update_item_of_types(config: configparser.ConfigParser):
         # otherwise we are going to need to resolve this identifier to the API ID
         else:
             source = get_api_id(source_field_name, row.get('source'))
+            if source is None:
+                logger.error(
+                    "Unable to resolve source ID: {}. on row:{}".format(str(row.get('source')), str(row.get('row'))))
+                continue
             destination = get_api_id(destination_field_name, row.get('destination'))
+            if destination is None:
+                logger.error(
+                    "Unable to resolve destination ID: {}. on row:{}".format(str(row.get('destination')),
+                                                                             str(row.get('row'))))
+                continue
 
         payload = {
             'op': 'add',
@@ -62,6 +71,7 @@ def update_item_of_types(config: configparser.ConfigParser):
             'payload': payload
         })
 
+    # execute all the API PATCH requests here
     if len(patch_payloads) > 0:
         try:
             for patch in patch_payloads:
@@ -71,15 +81,21 @@ def update_item_of_types(config: configparser.ConfigParser):
             logger.error("Unable to patch item: {} because: {}".format(str(patch.get('id')), str(error)))
 
 
+# creates a lucene abstract items endpoint search to the unique API item ID
 def get_api_id(field_name, field_value):
+    # first check to see if we have done this work already
     if field_value in unique_item_id_map:
         return unique_item_id_map[field_value]
+    # build out the luecne search "field_name:'field_value'"
     lucene_search = field_name + ":\"" + field_value + "\""
     results = jama_client.get_abstract_items(contains=lucene_search)
+    # there must be exactly one result here. otherwise this field is not unique.
     if len(results) == 1:
         unique_item_id_map[field_value] = results[0].get('id')
         return results[0].get('id')
+    # failed. return None
     else:
+        unique_item_id_map[field_value] = None
         return None
 
 
