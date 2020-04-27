@@ -108,11 +108,21 @@ def process_csv_content(csv_file, source_item_column, destination_item_column):
         # We need to get a dict reader, if the CSV file has headers, we dont need to supply them
         csv_dict_reader = csv.DictReader(open_csv_file)
 
+        if source_item_column not in csv_dict_reader.fieldnames:
+            logger.error('unable to find the source column{} in the CSV file. script exiting...'.format(source_item_column))
+            exit(1)
+
+        if destination_item_column not in csv_dict_reader.fieldnames:
+            logger.error('unable to find the destination column{} in the CSV file. script exiting...'.format(destination_item_column))
+            exit(1)
+
         # Begin processing the data in the CSV file.
         for row_number, row_data in enumerate(csv_dict_reader):
             # For each row in the CSV file we will append an object to a list for later processing.
             # First get source and target data. These are mandatory, a missing data point here is an error.
             csv_lines_read += 1
+
+            # run some quick validations that we have data in the cells
             current_row_rel_data = {
                 'row': row_number,
                 'source': row_data[source_item_column],
@@ -136,12 +146,14 @@ def init_logging():
 
 
 def parse_config():
+    # allow the user to shorthand this and just look for the 'config.ini' file
     if (len(sys.argv) == 1):
         current_dir = os.path.dirname(__file__)
         path_to_config = 'config.ini'
         if not os.path.isabs(path_to_config):
             path_to_config = os.path.join(current_dir, path_to_config)
 
+    # use the config file location
     if len(sys.argv) == 2:
         current_dir = os.path.dirname(__file__)
         path_to_config = sys.argv[1]
