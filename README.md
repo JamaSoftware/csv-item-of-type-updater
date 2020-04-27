@@ -59,11 +59,6 @@ value to 'true' instructs the client to use OAuth authentication protocols
 #### Script Settings:
 This section contains settings for configuration of the scripts functionality.
 
-#### A note on terminology:
-Any field that begins with 'destination' is referring to an item that will be updated i.e. a hazard or failure mode.  
-Any field that begins with 'source' is referring to an item from which data will be pulled, i.e. a Harm.  
-All fields are required.
-
 * csv_file_path: The path the csv file to be uploaded.
 
 * destination_item_of_type_field: API field name of the item of type field on the destination item being updated.
