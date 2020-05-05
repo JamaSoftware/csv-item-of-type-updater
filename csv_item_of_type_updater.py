@@ -162,7 +162,13 @@ def parse_config():
 
     # Parse config file.
     configuration = configparser.ConfigParser()
-    configuration.read_file(open(path_to_config))
+    try:
+        with open(path_to_config, encoding="utf8", errors='ignore') as file:
+            configuration.read_file(file)
+    except Exception as e:
+        logger.error("Unable to parse source csv content. exception: " + str(e))
+        exit(1)
+
     return configuration
 
 
