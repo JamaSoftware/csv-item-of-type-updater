@@ -1,5 +1,8 @@
 # CSV Item Of Type Updater
-The purpose of this script is to read in a csv file process each row to update the corresponding item of type fields.
+The purpose of this script is to read in a csv file and process each row to update the corresponding item of type fields.
+
+It parses a CSV file with a source and destination column. This script will then update each item specified in the CSV with the corresponding item of type value. 
+
 
 # Source CSV Content
 The source csv content must have a header row with two columns to represent a source ID and a destination ID. There can
